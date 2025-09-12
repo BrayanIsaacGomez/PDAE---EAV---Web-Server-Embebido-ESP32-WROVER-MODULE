@@ -1,6 +1,9 @@
 #include <WiFi.h>
 #include <Adafruit_NeoPixel.h>
 
+//#define SERIAL_MONITORING
+
+
 const char* ssid     = "galileo";       //Comentar estos datos al configurar su propia red
 const char* password = "";  //Comentar estos datos al configurar su propia red
 
@@ -49,7 +52,9 @@ void playNeopixelsNonBlocking() {
 }
 
 void setup() {
-  Serial.begin(115200);
+  #ifdef SERIAL_MONITORING
+    Serial.begin(115200);
+  #endif
 
   pinMode(botonPin1, INPUT_PULLUP); // botón con resistencia interna
   pinMode(botonPin2, INPUT_PULLUP); // botón con resistencia interna
@@ -59,11 +64,16 @@ void setup() {
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
+    #ifdef SERIAL_MONITORING
+      Serial.print(".");
+    #endif
   }
-  Serial.println("\nConectado a WiFi");
-  Serial.print("IP: ");
-  Serial.println(WiFi.localIP());
+
+  #ifdef SERIAL_MONITORING
+    Serial.println("\nConectado a WiFi");
+    Serial.print("IP: ");
+    Serial.println(WiFi.localIP());
+  #endif
 
   server.begin();
   tiempo_inicio = esp_timer_get_time();
@@ -94,8 +104,14 @@ void loop() {
     if (client.available()) {
       char c = client.read();
       header += c;
-
+      
       if (c == '\n') {
+        /*
+        Serial.println(" :o   //////////////////");
+        Serial.println(header);
+        Serial.println(client.remoteIP());
+        Serial.println(" ////////////////////////");
+        */
         // --- Si la petición fue /estado ---
         if (header.indexOf("GET /estado1") >= 0) {
           if (digitalRead(botonPin1) == LOW) {
@@ -155,7 +171,7 @@ void loop() {
           client.println("HTTP/1.1 200 OK");       // Status
           client.println("Content-type:text/plain");// Header
           client.println();                        // Línea vacía
-          client.print("NeoPixels encendidos");    // Contenido
+          client.print("NEOPIXEL_ON");    // Contenido
 
         }
 
@@ -168,7 +184,7 @@ void loop() {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/plain");
           client.println();
-          client.print("NeoPixels apagados");
+          client.print("NEOPIXEL_OFF");    // Contenido
         }
 
         // --- Página principal ---
